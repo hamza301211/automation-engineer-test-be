@@ -25,6 +25,10 @@ jobs:
     name: Run Newman API Tests
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
 
     env:
       NEWMAN_BASE_URL: ${{ secrets.NEWMAN_BASE_URL || 'https://orta-full-stack-dev-test-be-63gp.onrender.com/api' }}
