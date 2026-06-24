@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/shifts/{{shiftId}}"
+method: DELETE
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{newUserToken}}
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+
+      pm.test('Status code is 200', () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Delete successful', () => {
+          pm.expect(body).to.have.property('message', 'Shift deleted successfully');
+      });
+    language: text/javascript
+order: 13000

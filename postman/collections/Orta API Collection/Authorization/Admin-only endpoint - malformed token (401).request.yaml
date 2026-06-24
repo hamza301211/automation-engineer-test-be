@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/shifts?page=1&limit=10"
+method: GET
+headers:
+  Authorization: "{{bearer_token_1d4b}}"
+queryParams:
+  page: "1"
+  limit: "10"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 401', () => {
+        pm.response.to.have.status(401);
+      });
+      pm.test('Error code indicates malformed token', () => {
+        const body = pm.response.json();
+        pm.expect(['AUTH_TOKEN_MALFORMED', 'AUTH_HEADER_INVALID', 'AUTH_FAILED']).to.include(body.errorCode);
+      });
+    language: text/javascript
+order: 4000

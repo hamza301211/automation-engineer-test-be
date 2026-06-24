@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/shifts/my-shifts?page=1&limit=10"
+method: GET
+queryParams:
+  page: "1"
+  limit: "10"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 401', () => {
+        pm.response.to.have.status(401);
+      });
+      pm.test('Unauthenticated user cannot access user-scoped endpoint', () => {
+        const body = pm.response.json();
+        pm.expect(body.errorCode).to.eql('AUTH_HEADER_MISSING');
+      });
+    language: text/javascript
+order: 7000

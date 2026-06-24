@@ -1,0 +1,40 @@
+$kind: http-request
+url: "{{baseUrl}}/shifts"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "title": "{{shiftTitle}}",
+      "role": "{{shiftRole}}",
+      "typeOfShift": ["{{shiftType}}"],
+      "user": "{{newUserId}}",
+      "startTime": "{{shiftStartTime}}",
+      "finishTime": "{{shiftFinishTime}}",
+      "numOfShiftsPerDay": {{shiftNumOfShifts}},
+      "location": {
+        "name": "{{locationName}}",
+        "address": "{{locationAddress}}",
+        "postCode": "{{locationPostCode}}",
+        "cordinates": {
+          "longitude": {{locationLongitude}},
+          "latitude": {{locationLatitude}}
+        }
+      },
+      "date": "{{shiftDate}}-1"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 400', () => {
+        pm.response.to.have.status(400);
+      });
+      pm.test('Error message indicates past date not allowed', () => {
+        const body = pm.response.json();
+        pm.expect(body.issues[0].error.toLowerCase()).to.include('past');
+      });
+    language: text/javascript
+order: 3000

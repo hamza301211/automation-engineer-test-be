@@ -1,0 +1,1558 @@
+{
+  "info": {
+    "_postman_id": "4ec489fd-c45e-42a6-94ed-10f35172d941",
+    "name": "Orta API Collection",
+    "description": "End-to-end API automation for the Orta Shift Manager backend. Covers Auth, Authorization, and Shift Management flows as a chained E2E suite (not isolated requests) - run order matters within each folder.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "56065626",
+    "_collection_link": "https://go.postman.co/collection/56065626-4ec489fd-c45e-42a6-94ed-10f35172d941?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register - valid new user",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Generate unique email per run to avoid duplicate-user collisions.\nconst uniqueEmail = `testuser${Date.now()}@example.com`;\n\n// Pull configurable values from the environment (no hardcoded credentials).\npm.environment.set('newUserEmail', uniqueEmail);\npm.environment.set('newUserPassword', pm.environment.get('workerPassword'));\npm.environment.set('newUserName', pm.environment.get('workerName'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 200', () => {\n    pm.response.to.have.status(200);\n});\n\npm.test('Response contains token and user', () => {\n    pm.expect(body).to.have.property('token');\n    pm.expect(body.user).to.have.property('id');\n    pm.expect(body.user.role).to.equal('worker');\n});\n\npm.environment.set('newUserToken', body.token);\npm.environment.set('newUserId', body.user.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{newUserName}}\",\n  \"email\": \"{{newUserEmail}}\",\n  \"password\": \"{{newUserPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register - missing fields returns 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', () => {\n  pm.response.to.have.status(400);\n});\n\npm.test('Error code is VALIDATION_ERROR', () => {\n  const body = pm.response.json();\n  pm.expect(body.errorCode).to.eql('VALIDATION_ERROR');\n});\n\npm.test('Response includes field-level issues', () => {\n  const body = pm.response.json();\n  pm.expect(body).to.have.property('issues');\n  pm.expect(body.issues).to.be.an('array').that.is.not.empty;\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"email\": \"\",\n  \"password\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register - duplicate email returns 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', () => {\n  pm.response.to.have.status(400);\n});\n\npm.test('Message indicates user already exists', () => {\n  const body = pm.response.json();\n  pm.expect(body.message.toLowerCase()).to.include('already exists');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{adminName}}\",\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register - weak password returns 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const uniqueEmail = `weakpass+${Date.now()}@example.com`;\npm.environment.set('weakPasswordTestEmail', uniqueEmail);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', () => {\n  pm.response.to.have.status(400);\n});\n\npm.test('Error code is VALIDATION_ERROR', () => {\n  const body = pm.response.json();\n  pm.expect(body.errorCode).to.eql('VALIDATION_ERROR');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"{{weakPasswordTestEmail}}\",\n  \"password\": \"weak\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - admin valid credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {\n  pm.response.to.have.status(200);\n});\n\npm.test('Response contains a JWT token', () => {\n  const body = pm.response.json();\n  pm.expect(body).to.have.property('token');\n  pm.expect(body.token).to.be.a('string').with.length.greaterThan(0);\n  pm.environment.set('adminToken', body.token);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - worker valid credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {\n  pm.response.to.have.status(200);\n});\n\npm.test('Response contains a JWT token', () => {\n  const body = pm.response.json();\n  pm.expect(body).to.have.property('token');\n  pm.environment.set('workerToken', body.token);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{workerEmail}}\",\n  \"password\": \"{{workerPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - invalid credentials returns 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', () => {\n  pm.response.to.have.status(400);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"WrongPassword123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - nonexistent user returns 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', () => {\n  pm.response.to.have.status(404);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"doesnotexist+{{$timestamp}}@example.com\",\n  \"password\": \"SomePassword123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authorization",
+      "item": [
+		{
+          "name": "Admin-only endpoint - admin token (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {\n  pm.response.to.have.status(200);\n});\npm.test('Admin can access admin-only endpoint', () => {\n  const body = pm.response.json();\n  pm.expect(body).to.have.property('shifts');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+		{
+          "name": "Admin-only endpoint - worker token (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', () => {\n  pm.response.to.have.status(403);\n});\npm.test('Error code is ADMIN_ROLE_REQUIRED', () => {\n  const body = pm.response.json();\n  pm.expect(body.errorCode).to.eql('ADMIN_ROLE_REQUIRED');\n});\npm.test('Error message indicates admin role required', () => {\n  const body = pm.response.json();\n  pm.expect(body.message.toLowerCase()).to.include('admin');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{workerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin-only endpoint - no token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', () => {\n  pm.response.to.have.status(401);\n});\npm.test('Error code is AUTH_HEADER_MISSING', () => {\n  const body = pm.response.json();\n  pm.expect(body.errorCode).to.eql('AUTH_HEADER_MISSING');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shifts?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin-only endpoint - malformed token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', () => {\n  pm.response.to.have.status(401);\n});\npm.test('Error code indicates malformed token', () => {\n  const body = pm.response.json();\n  pm.expect(['AUTH_TOKEN_MALFORMED', 'AUTH_HEADER_INVALID', 'AUTH_FAILED']).to.include(body.errorCode);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{bearer_token_1d4b}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User endpoint - admin token (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {\n  pm.response.to.have.status(200);\n});\npm.test('Admin can access user-scoped endpoints', () => {\n  const body = pm.response.json();\n  pm.expect(body).to.have.property('shifts');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts/my-shifts?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts",
+                "my-shifts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User endpoint - worker token (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', () => {\n  pm.response.to.have.status(200);\n});\npm.test('Worker can access their own user-scoped endpoint', () => {\n  const body = pm.response.json();\n  pm.expect(body).to.have.property('shifts');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{workerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts/my-shifts?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts",
+                "my-shifts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User endpoint - no token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', () => {\n  pm.response.to.have.status(401);\n});\npm.test('Unauthenticated user cannot access user-scoped endpoint', () => {\n  const body = pm.response.json();\n  pm.expect(body.errorCode).to.eql('AUTH_HEADER_MISSING');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shifts/my-shifts?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts",
+                "my-shifts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+		{
+          "name": "Authorization header - Bearer missing (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', () => {\n  pm.response.to.have.status(401);\n});\npm.test('Missing Bearer scheme returns AUTH_FAILED', () => {\n  const body = pm.response.json();\n  pm.expect(body.errorCode).to.eql('AUTH_FAILED');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "JWT {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Authorization header - invalid format (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', () => {\n  pm.response.to.have.status(401);\n});\npm.test('Malformed auth header returns AUTH_FAILED', () => {\n  const body = pm.response.json();\n  pm.expect(['AUTH_HEADER_INVALID', 'AUTH_HEADER_INVALID_SCHEME', 'AUTH_FAILED']).to.include(body.errorCode);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Authorization header - empty token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', () => {\n  pm.response.to.have.status(401);\n});\npm.test('Empty token returns AUTH_FAILED', () => {\n  const body = pm.response.json();\n  pm.expect(body.errorCode).to.eql('AUTH_FAILED');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer "
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Promote user to admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 200', () => {\n    pm.response.to.have.status(200);\n});\n\npm.test('User role is now admin', () => {\n    pm.expect(body).to.have.property('user');\n    pm.expect(body.user).to.have.property('role', 'admin');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": \"{{newUserId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/promote-to-admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "promote-to-admin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin route - no token (expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 401', () => {\n    pm.response.to.have.status(401);\n});\n\npm.test('Error code is AUTH_HEADER_MISSING', () => {\n    pm.expect(body).to.have.property('errorCode', 'AUTH_HEADER_MISSING');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workers/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workers",
+                "all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin route - worker token (expect 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 403', () => {\n    pm.response.to.have.status(403);\n});\n\npm.test('Error code is ADMIN_ROLE_REQUIRED', () => {\n    pm.expect(body).to.have.property('errorCode', 'ADMIN_ROLE_REQUIRED');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{workerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workers/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workers",
+                "all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin route - admin token (expect 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 200', () => {\n    pm.response.to.have.status(200);\n});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/workers/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workers",
+                "all"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shifts",
+      "item": [
+        {
+          "name": "Create shift - valid payload",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const tomorrow = new Date();\ntomorrow.setDate(tomorrow.getDate() + 1);\nconst isoDate = tomorrow.toISOString();\npm.environment.set('shiftDate', isoDate);\npm.environment.set('shiftTitle', `Shift ${Date.now()}`);\n//pm.environment.set('shiftRole', 'Waiter');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', () => {\n  pm.response.to.have.status(201);\n});\npm.test('Response contains shift id', () => {\n  const body = pm.response.json();\n  pm.expect(body.shift).to.have.property('id');\n  pm.environment.set('shiftId', body.shift.id);\n});\npm.test('Shift has correct user assigned', () => {\n  const body = pm.response.json();\n  pm.expect(body.shift.user.id).to.eql(pm.environment.get('newUserId'));\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"{{shiftTitle}}\",\n  \"role\": \"{{shiftRole}}\",\n  \"typeOfShift\": [\"{{shiftType}}\"],\n  \"user\": \"{{newUserId}}\",\n  \"startTime\": \"{{shiftStartTime}}\",\n  \"finishTime\": \"{{shiftFinishTime}}\",\n  \"numOfShiftsPerDay\": {{shiftNumOfShifts}},\n  \"location\": {\n    \"name\": \"{{locationName}}\",\n    \"address\": \"{{locationAddress}}\",\n    \"postCode\": \"{{locationPostCode}}\",\n    \"cordinates\": {\n      \"longitude\": {{locationLongitude}},\n      \"latitude\": {{locationLatitude}}\n    }\n  },\n  \"date\": \"{{shiftDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shifts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create shift - missing fields returns 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', () => {\n  pm.response.to.have.status(400);\n});\npm.test('Error code is VALIDATION_ERROR', () => {\n  const body = pm.response.json();\n  pm.expect(body.errorCode).to.eql('VALIDATION_ERROR');\n});\npm.test('Response includes field-level issues', () => {\n  const body = pm.response.json();\n  pm.expect(body).to.have.property('issues');\n  pm.expect(body.issues).to.be.an('array').that.is.not.empty;\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"\",\n  \"role\": \"\",\n  \"user\": \"\",\n  \"startTime\": \"\",\n  \"finishTime\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shifts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create shift - past date returns 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', () => {\n  pm.response.to.have.status(400);\n});\npm.test('Error message indicates past date not allowed', () => {\n  const body = pm.response.json();\n  pm.expect(body.issues[0].error.toLowerCase()).to.include('past');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"{{shiftTitle}}\",\n  \"role\": \"{{shiftRole}}\",\n  \"typeOfShift\": [\"{{shiftType}}\"],\n  \"user\": \"{{newUserId}}\",\n  \"startTime\": \"{{shiftStartTime}}\",\n  \"finishTime\": \"{{shiftFinishTime}}\",\n  \"numOfShiftsPerDay\": {{shiftNumOfShifts}},\n  \"location\": {\n    \"name\": \"{{locationName}}\",\n    \"address\": \"{{locationAddress}}\",\n    \"postCode\": \"{{locationPostCode}}\",\n    \"cordinates\": {\n      \"longitude\": {{locationLongitude}},\n      \"latitude\": {{locationLatitude}}\n    }\n  },\n  \"date\": \"{{shiftDate}}-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shifts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ]
+            }
+          },
+          "response": []
+        },
+		{
+          "name": "Create shift (Admin - promoted user)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const tomorrow = new Date();\ntomorrow.setDate(tomorrow.getDate() + 1);\npm.environment.set('shiftDate', tomorrow.toISOString());\n\n// Generate unique test data to avoid collisions on re-runs\nconst timestamp = Date.now();\npm.environment.set('shiftTitle', `Automation Shift ${timestamp}`);\npm.environment.set('shiftRole', `QA Engineer ${timestamp}`);\npm.environment.set('locationName', `Test Office ${timestamp}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 201', () => {\n    pm.response.to.have.status(201);\n});\n\npm.test('Shift created successfully', () => {\n    pm.expect(body).to.have.property('shift');\n    pm.expect(body.shift).to.have.property('id');\n});\n\npm.environment.set('shiftId', body.shift.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"{{shiftTitle}}\",\n    \"role\": \"{{shiftRole}}\",\n    \"typeOfShift\": [\"{{shiftType}}\"],\n    \"user\": \"{{newUserId}}\",\n    \"startTime\": \"{{shiftStartTime}}\",\n    \"finishTime\": \"{{shiftFinishTime}}\",\n    \"numOfShiftsPerDay\": {{shiftNumOfShifts}},\n    \"location\": {\n        \"name\": \"{{locationName}}\",\n        \"address\": \"{{locationAddress}}\",\n        \"postCode\": \"{{locationPostCode}}\",\n        \"cordinates\": {\n            \"longitude\": {{locationLongitude}},\n            \"latitude\": {{locationLatitude}}\n        }\n    },\n    \"date\": \"{{shiftDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shifts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fetch all shifts (Admin - pagination & filters)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 200', () => {\n    pm.response.to.have.status(200);\n});\n\npm.test('Response has data array with pagination', () => {\n    pm.expect(body).to.have.property('shifts');\n    pm.expect(body).to.have.property('pagination');\n    pm.expect(body.pagination).to.have.property('currentPage');\n    pm.expect(body.pagination).to.have.property('totalPages');\n    pm.expect(body.pagination).to.have.property('totalCount');\n    pm.expect(body.pagination).to.have.property('hasNextPage');\n    pm.expect(body.pagination).to.have.property('hasPrevPage');\n    pm.expect(body.pagination).to.have.property('limit');        \n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts?page=1&limit=10&sortBy=date&sortOrder=asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "date"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "asc"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fetch user's shifts (new user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 200', () => {\n    pm.response.to.have.status(200);\n});\n\npm.test('Response has data array', () => {\n    pm.expect(body).to.have.property('shifts');\n    pm.expect(body.shifts).to.be.an('array');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts/my-shifts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts",
+                "my-shifts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get shift by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 200', () => {\n    pm.response.to.have.status(200);\n});\n\npm.test('Shift ID matches captured ID', () => {\n    pm.expect(body).to.have.property('shift');\n    pm.expect(body.shift.id).to.equal(pm.environment.get('shiftId'));\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts/{{shiftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts",
+                "{{shiftId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update shift (Admin - promoted user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 200', () => {\n    pm.response.to.have.status(200);\n});\n\npm.test('Shift updated successfully', () => {\n    pm.expect(body).to.have.property('shift');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Updated Shift Title - Automation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shifts/{{shiftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts",
+                "{{shiftId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clock in to shift",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 200', () => {\n    pm.response.to.have.status(200);\n});\n\npm.test('Clock-in successful', () => {\n    pm.expect(body).to.have.property('shift');\n    pm.expect(body).to.have.property('message');\n    pm.expect(body.shift).to.have.property('clockInTime');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts/{{shiftId}}/clock-in",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts",
+                "{{shiftId}}",
+                "clock-in"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Invalid clock-out (without clock-in - expect 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 400', () => {\n    pm.response.to.have.status(400);\n});\n\npm.test('Error code is INVALID_SHIFT_STATUS', () => {\n    pm.expect(body).to.have.property('message');\n    //const message = body.message.toLowerCase();\n    pm.expect(body).to.have.property('errorCode', 'INVALID_SHIFT_STATUS');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts/{{shiftId}}/clock-out",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts",
+                "{{shiftId}}",
+                "clock-out"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clock out of shift (valid)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 200', () => {\n    pm.response.to.have.status(200);\n});\n\npm.test('Clock-out successful', () => {\n    pm.expect(body).to.have.property('success', true);\n    pm.expect(body.data).to.have.property('clockOutTime');\n    pm.expect(body.data).to.have.property('totalHours');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts/{{shiftId}}/clock-out",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts",
+                "{{shiftId}}",
+                "clock-out"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel shift (Admin - promoted user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 200', () => {\n    pm.response.to.have.status(200);\n});\n\npm.test('Cancel successful', () => {\n    pm.expect(body).to.have.property('message', 'Shift cancelled successfully');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts/{{shiftId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts",
+                "{{shiftId}}",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete shift (Admin - promoted user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();\n\npm.test('Status code is 200', () => {\n    pm.response.to.have.status(200);\n});\n\npm.test('Delete successful', () => {\n    pm.expect(body).to.have.property('message', 'Shift deleted successfully');\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{newUserToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shifts/{{shiftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shifts",
+                "{{shiftId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "workerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "newUserEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "newUserPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "newUserId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "newUserToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "shiftId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

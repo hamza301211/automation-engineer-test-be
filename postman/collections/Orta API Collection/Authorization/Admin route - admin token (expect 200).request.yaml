@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/workers/all"
+method: GET
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |
+      const body = pm.response.json();
+
+      pm.test('Status code is 200', () => {
+          pm.response.to.have.status(200);
+      });
+    language: text/javascript
+order: 14000

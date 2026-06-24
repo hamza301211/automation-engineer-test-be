@@ -1,0 +1,60 @@
+name: dev
+values:
+  - key: baseUrl
+    value: 'https://orta-full-stack-dev-test-be-63gp.onrender.com/api'
+  - key: adminName
+    value: ''
+  - key: adminEmail
+    value: john@example.com
+  - key: adminPassword
+    value: StrongPass123!
+  - key: adminToken
+    secret: true
+  - key: workerName
+    value: ''
+  - key: workerEmail
+    value: testUser1@example.com
+  - key: workerPassword
+    value: StrongPass123!
+  - key: workerToken
+    secret: true
+  - key: newUserName
+    value: ''
+  - key: newUserEmail
+    value: ''
+  - key: newUserPassword
+    value: ''
+  - key: newUserId
+    value: ''
+  - key: newUserToken
+    secret: true
+  - key: shiftId
+    value: ''
+  - key: shiftTitle
+    value: ''
+  - key: shiftRole
+    value: ''
+  - key: updatedShiftRole
+    value: ''
+  - key: shiftDate
+    value: ''
+  - key: shiftType
+    value: ''
+  - key: shiftStartTime
+    value: ''
+  - key: shiftFinishTime
+    value: ''
+  - key: shiftNumOfShifts
+    value: ''
+  - key: batchShiftDate
+    value: ''
+  - key: locationAddress
+    value: ''
+  - key: locationPostCode
+    value: ''
+  - key: locationLongitude
+    value: ''
+  - key: locationLatitude
+    value: ''
+  - key: locationName
+    value: ''

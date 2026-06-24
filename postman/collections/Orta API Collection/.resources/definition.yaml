@@ -1,0 +1,11 @@
+$kind: collection
+description: End-to-end API automation for the Orta Shift Manager backend. Covers Auth, Authorization, and Shift Management flows as a chained E2E suite (not isolated requests) - run order matters within each folder.
+variables:
+  baseUrl: ""
+  adminToken: ""
+  workerToken: ""
+  newUserEmail: ""
+  newUserPassword: ""
+  newUserId: ""
+  newUserToken: ""
+  shiftId: ""

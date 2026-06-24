@@ -1,0 +1,54 @@
+$kind: http-request
+url: "{{baseUrl}}/shifts"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "title": "{{shiftTitle}}",
+      "role": "{{shiftRole}}",
+      "typeOfShift": ["{{shiftType}}"],
+      "user": "{{newUserId}}",
+      "startTime": "{{shiftStartTime}}",
+      "finishTime": "{{shiftFinishTime}}",
+      "numOfShiftsPerDay": {{shiftNumOfShifts}},
+      "location": {
+        "name": "{{locationName}}",
+        "address": "{{locationAddress}}",
+        "postCode": "{{locationPostCode}}",
+        "cordinates": {
+          "longitude": {{locationLongitude}},
+          "latitude": {{locationLatitude}}
+        }
+      },
+      "date": "{{shiftDate}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const isoDate = tomorrow.toISOString();
+      pm.environment.set('shiftDate', isoDate);
+      pm.environment.set('shiftTitle', `Shift ${Date.now()}`);
+      //pm.environment.set('shiftRole', 'Waiter');
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 201', () => {
+        pm.response.to.have.status(201);
+      });
+      pm.test('Response contains shift id', () => {
+        const body = pm.response.json();
+        pm.expect(body.shift).to.have.property('id');
+        pm.environment.set('shiftId', body.shift.id);
+      });
+      pm.test('Shift has correct user assigned', () => {
+        const body = pm.response.json();
+        pm.expect(body.shift.user.id).to.eql(pm.environment.get('newUserId'));
+      });
+    language: text/javascript
+order: 1000

@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{baseUrl}}/shifts?page=1&limit=10"
+method: GET
+headers:
+  Authorization: Bearer {{workerToken}}
+queryParams:
+  page: "1"
+  limit: "10"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 403', () => {
+        pm.response.to.have.status(403);
+      });
+      pm.test('Error code is ADMIN_ROLE_REQUIRED', () => {
+        const body = pm.response.json();
+        pm.expect(body.errorCode).to.eql('ADMIN_ROLE_REQUIRED');
+      });
+      pm.test('Error message indicates admin role required', () => {
+        const body = pm.response.json();
+        pm.expect(body.message.toLowerCase()).to.include('admin');
+      });
+    language: text/javascript
+order: 2000

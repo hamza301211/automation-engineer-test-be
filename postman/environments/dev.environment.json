@@ -1,0 +1,190 @@
+{
+  "name": "dev",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://orta-full-stack-dev-test-be-63gp.onrender.com/api",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "adminName",
+      "value": "Test Admin",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "adminEmail",
+      "value": "john@example.com",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "adminPassword",
+      "value": "StrongPass123!",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "workerName",
+      "value": "Test Worker",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "workerEmail",
+      "value": "testUser1@example.com",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "workerPassword",
+      "value": "StrongPass123!",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "workerToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "newUserName",
+      "value": "Test New User",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "newUserEmail",
+      "value": "newuser@example.com",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "newUserPassword",
+      "value": "StrongPass123!",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "newUserId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "newUserToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "shiftId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "shiftTitle",
+      "value": "Shift 1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "shiftRole",
+      "value": "Teacher",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "updatedShiftRole",
+      "value": "Head Teacher",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "shiftDate",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "shiftType",
+      "value": "Weekday",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "shiftStartTime",
+      "value": "09:00",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "shiftFinishTime",
+      "value": "17:00",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "shiftNumOfShifts",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "batchShiftDate",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "locationAddress",
+      "value": "123 Test Street",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "locationPostCode",
+      "value": "TE5T 1NG",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "locationLongitude",
+      "value": "0.1276",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "locationLatitude",
+      "value": "51.5074",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "locationName",
+      "value": "Test Location",
+      "type": "default",
+      "enabled": true
+    },
+	{ "key": "ERR_AUTH_HEADER_MISSING", "value": "AUTH_HEADER_MISSING", "enabled": true },
+	{ "key": "ERR_AUTH_TOKEN_MALFORMED", "value": "AUTH_TOKEN_MALFORMED", "enabled": true },
+	{ "key": "ERR_ADMIN_ROLE_REQUIRED", "value": "ADMIN_ROLE_REQUIRED", "enabled": true },
+	{ "key": "ERR_VALIDATION", "value": "VALIDATION_ERROR", "enabled": true },
+	{ "key": "ERR_INVALID_SHIFT_STATUS", "value": "INVALID_SHIFT_STATUS", "enabled": true },
+	{ "key": "ERR_USER_NOT_FOUND", "value": "USER_NOT_FOUND", "enabled": true },
+	{ "key": "ERR_CLOCK_OUT_TOO_EARLY", "value": "CLOCK_OUT_TOO_EARLY", "enabled": true },
+	{ "key": "ERR_SHIFT_NOT_FOUND", "value": "SHIFT_NOT_FOUND", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-06-23T00:00:00.000Z",
+  "_postman_exported_using": "Postman/11.0.0"
+}

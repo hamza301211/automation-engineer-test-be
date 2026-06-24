@@ -11,7 +11,9 @@
     "test": "NODE_ENV=test mocha test/**/*.test.js --timeout 10000",
     "test:coverage": "NODE_ENV=test c8 mocha test/**/*.test.js --timeout 10000",
     "coverage": "npm run test:coverage",
-    "coverage:open": "npm run coverage && open coverage/index.html"
+    "coverage:open": "npm run coverage && open coverage/index.html",
+    "test:api": "newman run postman/collections/orta-api-collection.json -e postman/environments/dev.environment.json -r htmlextra,json --reporter-htmlextra-export postman/reports/report.html --reporter-json-export postman/reports/report.json"
+
   },
   "author": "",
   "license": "ISC",
@@ -42,6 +44,8 @@
     "eslint-config-prettier": "^10.1.8",
     "mocha": "^11.7.2",
     "mongodb-memory-server": "^10.2.1",
+    "newman": "^6.2.2",
+    "newman-reporter-htmlextra": "^1.23.1",
     "prettier": "3.6.2",
     "sinon": "^21.0.0",
     "supertest": "^7.1.4"
