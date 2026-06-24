@@ -1,0 +1,42 @@
+$kind: http-request
+url: "{{baseUrl}}/user/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "{{newUserName}}",
+      "email": "{{newUserEmail}}",
+      "password": "{{newUserPassword}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Generate unique email per run to avoid duplicate-user collisions.
+      const uniqueEmail = `testuser${Date.now()}@example.com`;
+
+      // Pull configurable values from the environment (no hardcoded credentials).
+      pm.environment.set('newUserEmail', uniqueEmail);
+      pm.environment.set('newUserPassword', pm.environment.get('workerPassword'));
+      pm.environment.set('newUserName', pm.environment.get('workerName'));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+
+      pm.test('Status code is 200', () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response contains token and user', () => {
+          pm.expect(body).to.have.property('token');
+          pm.expect(body.user).to.have.property('id');
+          pm.expect(body.user.role).to.equal('worker');
+      });
+
+      pm.environment.set('newUserToken', body.token);
+      pm.environment.set('newUserId', body.user.id);
+    language: text/javascript
+order: 1000

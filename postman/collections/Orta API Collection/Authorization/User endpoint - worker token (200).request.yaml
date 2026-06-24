@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/shifts/my-shifts?page=1&limit=10"
+method: GET
+headers:
+  Authorization: Bearer {{workerToken}}
+queryParams:
+  page: "1"
+  limit: "10"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 200', () => {
+        pm.response.to.have.status(200);
+      });
+      pm.test('Worker can access their own user-scoped endpoint', () => {
+        const body = pm.response.json();
+        pm.expect(body).to.have.property('shifts');
+      });
+    language: text/javascript
+order: 6000

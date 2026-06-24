@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/shifts/{{shiftId}}"
+method: GET
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{newUserToken}}
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+
+      pm.test('Status code is 200', () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Shift ID matches captured ID', () => {
+          pm.expect(body).to.have.property('shift');
+          pm.expect(body.shift.id).to.equal(pm.environment.get('shiftId'));
+      });
+    language: text/javascript
+order: 7000

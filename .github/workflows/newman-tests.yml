@@ -1,0 +1,157 @@
+name: Newman API Automation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'postman/**'
+      - 'package.json'
+      - '.github/workflows/newman-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'postman/**'
+      - 'package.json'
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Run Newman API Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    env:
+      NEWMAN_BASE_URL: ${{ secrets.NEWMAN_BASE_URL || 'https://orta-full-stack-dev-test-be-63gp.onrender.com/api' }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      WORKER_EMAIL: ${{ secrets.WORKER_EMAIL }}
+      WORKER_PASSWORD: ${{ secrets.WORKER_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify API endpoints
+        run: |
+          echo "Base URL: ${{ env.NEWMAN_BASE_URL }}"
+          echo "Collection exists: $(test -f postman/collections/orta-api-collection.json && echo 'yes' || echo 'no')"
+          echo "Environment exists: $(test -f postman/environments/dev.environment.json && echo 'yes' || echo 'no')"
+
+      - name: Run API tests
+        id: api-test-run
+        run: npm run test:api
+        continue-on-error: true
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-html-report-${{ github.run_number }}
+          path: postman/reports/report.html
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-json-report-${{ github.run_number }}
+          path: postman/reports/report.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Comment PR with test results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const outcome = '${{ steps.api-test-run.outcome }}';
+            const runNumber = '${{ github.run_number }}';
+            
+            let comment = `## 📡 Newman API Test Results (Run #${runNumber})\n\n`;
+            
+            if (outcome === 'success') {
+              comment += '✅ **All API tests passed!**\n\n';
+            } else {
+              comment += '❌ **Some API tests failed**\n\n';
+            }
+            
+            comment += `### Reports\n`;
+            comment += `- 📊 HTML Report: See artifacts\n`;
+            comment += `- 📋 JSON Report: See artifacts\n`;
+            comment += `- 🔗 [View Full Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n`;
+            comment += `### Test Environment\n`;
+            comment += `- **Base URL**: ${{ env.NEWMAN_BASE_URL }}\n`;
+            comment += `- **Folders Tested**: Auth, Authorization, Shifts\n`;
+            comment += `- **Total Requests**: 38\n`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Generate summary
+        if: always()
+        run: |
+          echo "## Newman API Test Run Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Run Number**: ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ steps.api-test-run.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Base URL**: ${{ env.NEWMAN_BASE_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifacts**:" >> $GITHUB_STEP_SUMMARY
+          echo "- HTML Report: newman-html-report-${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- JSON Report: newman-json-report-${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check test results
+        if: steps.api-test-run.outcome == 'failure'
+        run: exit 1 
+
+  publish-report:
+    name: Publish Newman Report to GitHub Pages
+    needs: test
+    runs-on: ubuntu-latest
+    if: always() && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download HTML report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: newman-html-report-${{ github.run_number }}
+          path: newman-report
+
+      - name: Rename report to index.html
+        run: mv newman-report/report.html newman-report/index.html
+          
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./newman-report

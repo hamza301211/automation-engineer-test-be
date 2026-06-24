@@ -1,0 +1,32 @@
+$kind: http-request
+url: "{{baseUrl}}/shifts?page=1&limit=10&sortBy=date&sortOrder=asc"
+method: GET
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{adminToken}}
+queryParams:
+  page: "1"
+  limit: "10"
+  sortBy: date
+  sortOrder: asc
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+
+      pm.test('Status code is 200', () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response has data array with pagination', () => {
+          pm.expect(body).to.have.property('shifts');
+          pm.expect(body).to.have.property('pagination');
+          pm.expect(body.pagination).to.have.property('currentPage');
+          pm.expect(body.pagination).to.have.property('totalPages');
+          pm.expect(body.pagination).to.have.property('totalCount');
+          pm.expect(body.pagination).to.have.property('hasNextPage');
+          pm.expect(body.pagination).to.have.property('hasPrevPage');
+          pm.expect(body.pagination).to.have.property('limit');        
+      });
+    language: text/javascript
+order: 5000

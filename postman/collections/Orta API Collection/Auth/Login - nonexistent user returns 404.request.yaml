@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/user/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "doesnotexist+{{$timestamp}}@example.com",
+      "password": "SomePassword123!"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 404', () => {
+        pm.response.to.have.status(404);
+      });
+    language: text/javascript
+order: 8000

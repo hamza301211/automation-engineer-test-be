@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/workers/all"
+method: GET
+headers:
+  Content-Type: application/json
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+
+      pm.test('Status code is 401', () => {
+          pm.response.to.have.status(401);
+      });
+
+      pm.test('Error code is AUTH_HEADER_MISSING', () => {
+          pm.expect(body).to.have.property('errorCode', 'AUTH_HEADER_MISSING');
+      });
+    language: text/javascript
+order: 12000

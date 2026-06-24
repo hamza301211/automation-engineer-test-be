@@ -1,0 +1,33 @@
+$kind: http-request
+url: "{{baseUrl}}/shifts"
+method: POST
+headers:
+  Authorization: Bearer {{adminToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "title": "",
+      "role": "",
+      "user": "",
+      "startTime": "",
+      "finishTime": ""
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 400', () => {
+        pm.response.to.have.status(400);
+      });
+      pm.test('Error code is VALIDATION_ERROR', () => {
+        const body = pm.response.json();
+        pm.expect(body.errorCode).to.eql('VALIDATION_ERROR');
+      });
+      pm.test('Response includes field-level issues', () => {
+        const body = pm.response.json();
+        pm.expect(body).to.have.property('issues');
+        pm.expect(body.issues).to.be.an('array').that.is.not.empty;
+      });
+    language: text/javascript
+order: 2000

@@ -1,0 +1,57 @@
+$kind: http-request
+url: "{{baseUrl}}/shifts"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{newUserToken}}
+body:
+  type: json
+  content: |-
+    {
+        "title": "{{shiftTitle}}",
+        "role": "{{shiftRole}}",
+        "typeOfShift": ["{{shiftType}}"],
+        "user": "{{newUserId}}",
+        "startTime": "{{shiftStartTime}}",
+        "finishTime": "{{shiftFinishTime}}",
+        "numOfShiftsPerDay": {{shiftNumOfShifts}},
+        "location": {
+            "name": "{{locationName}}",
+            "address": "{{locationAddress}}",
+            "postCode": "{{locationPostCode}}",
+            "cordinates": {
+                "longitude": {{locationLongitude}},
+                "latitude": {{locationLatitude}}
+            }
+        },
+        "date": "{{shiftDate}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      pm.environment.set('shiftDate', tomorrow.toISOString());
+
+      // Generate unique test data to avoid collisions on re-runs
+      const timestamp = Date.now();
+      pm.environment.set('shiftTitle', `Automation Shift ${timestamp}`);
+      pm.environment.set('shiftRole', `QA Engineer ${timestamp}`);
+      pm.environment.set('locationName', `Test Office ${timestamp}`);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+
+      pm.test('Status code is 201', () => {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test('Shift created successfully', () => {
+          pm.expect(body).to.have.property('shift');
+          pm.expect(body.shift).to.have.property('id');
+      });
+
+      pm.environment.set('shiftId', body.shift.id);
+    language: text/javascript
+order: 4000

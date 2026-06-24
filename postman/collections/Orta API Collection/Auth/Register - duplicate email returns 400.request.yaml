@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/user/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "{{adminName}}",
+      "email": "{{adminEmail}}",
+      "password": "{{adminPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status code is 400', () => {
+        pm.response.to.have.status(400);
+      });
+
+      pm.test('Message indicates user already exists', () => {
+        const body = pm.response.json();
+        pm.expect(body.message.toLowerCase()).to.include('already exists');
+      });
+    language: text/javascript
+order: 3000

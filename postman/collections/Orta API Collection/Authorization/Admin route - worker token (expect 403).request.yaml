@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/workers/all"
+method: GET
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{workerToken}}
+scripts:
+  - type: afterResponse
+    code: |-
+      const body = pm.response.json();
+
+      pm.test('Status code is 403', () => {
+          pm.response.to.have.status(403);
+      });
+
+      pm.test('Error code is ADMIN_ROLE_REQUIRED', () => {
+          pm.expect(body).to.have.property('errorCode', 'ADMIN_ROLE_REQUIRED');
+      });
+    language: text/javascript
+order: 13000
